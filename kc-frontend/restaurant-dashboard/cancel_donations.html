@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cancel Donation</title>
+    <link rel="stylesheet" href="dashboard2.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <a href="../restaurant.html" class="logo">
+            <span class="nav-item">Restaurant Dashboard</span>
+        </a>
+        <a href="create_donations.html">
+            <i class="fas fa-plus-circle"></i>
+            <span class="nav-item">Create Donation</span>
+        </a>
+        <a href="donation_history.html">
+            <i class="fas fa-eye"></i>
+            <span class="nav-item">View Donations</span>
+        </a>
+        <a href="edit_donations.html">
+            <i class="fas fa-edit"></i>
+            <span class="nav-item">Edit Donation</span>
+        </a>
+        <a href="cancel_donations.html">
+            <i class="fas fa-times-circle"></i>
+            <span class="nav-item">Cancel Donation</span>
+        </a>
+        <a href="settings.html">
+            <i class="fas fa-cog"></i>
+            <span class="nav-item">Settings</span>
+        </a>
+        <a href="logout.html" class="logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span class="nav-item">Log out</span>
+        </a>
+    </div>
+    <!-- Main Content -->
+    <div class="main">
+        <div class="header">
+            <h1>Cancel Donation</h1>
+        </div>
+
+        <div class="form-container">
+            <h2>Cancel a Donation</h2>
+            <form id="cancelForm">
+                <div class="form-group">
+                    <label for="donationId">Donation ID:</label>
+                    <input type="text" id="donationId" name="donationId" placeholder="Enter Donation ID to cancel" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit">Cancel Donation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('cancelForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const donationId = document.getElementById('donationId').value;
+
+            const response = await fetch(`http://localhost:3000/cancel-donation/${donationId}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                alert('Donation cancelled successfully!');
+                event.target.reset();
+            } else {
+                const errorText = await response.text();
+                alert('Failed to cancel donation: ' + errorText);
+            }
+        });
+    </script>
+</body>
+</html>

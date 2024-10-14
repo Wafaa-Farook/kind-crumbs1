@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Details</title>
+    <link rel="stylesheet" href="restaurant_details.css">
+</head>
+<body>
+<div class="restaurant-container">
+    <h2>Enter Restaurant Details</h2>
+    <form id="restaurantForm">
+        <div class="input-group">
+            <label for="name">Restaurant Name</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="input-group">
+            <label for="address">Address</label>
+            <input type="text" id="address" name="address" required>
+        </div>
+        <div class="input-group">
+            <label for="contact">Contact Information</label>
+            <input type="text" id="contact" name="contactInfo" required>
+        </div>
+        <div class="form-group">
+            <button type="submit">Submit</button>
+        </div>
+    </form>
+    
+</div>
+<script>
+    document.getElementById('restaurantDetailsForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+    
+        const formData = new FormData(event.target);
+        const data = Object.fromEntries(formData);
+    
+        try {
+            const response = await fetch('/restaurant_details', { // This is the endpoint you defined in your backend
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+    
+            const result = await response.json();
+            alert(result.message);
+            if (response.ok) {
+                window.location.href = '/login.html'; // Redirect to login
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while submitting restaurant details.');
+        }
+    });
+    
+</script>
+</body>
+</html>

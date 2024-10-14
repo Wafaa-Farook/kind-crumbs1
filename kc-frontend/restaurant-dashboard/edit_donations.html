@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Donation</title>
+    <link rel="stylesheet" href="dashboard2.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <a href="../restaurant.html" class="logo">
+            <span class="nav-item">Restaurant Dashboard</span>
+        </a>
+        <a href="create_donations.html">
+            <i class="fas fa-plus-circle"></i>
+            <span class="nav-item">Create Donation</span>
+        </a>
+        <a href="donation_history.html">
+            <i class="fas fa-eye"></i>
+            <span class="nav-item">View Donation History</span>
+        </a>
+        <a href="edit_donations.html">
+            <i class="fas fa-edit"></i>
+            <span class="nav-item">Edit Donation</span>
+        </a>
+        <a href="cancel_donations.html">
+            <i class="fas fa-times-circle"></i>
+            <span class="nav-item">Cancel Donation</span>
+        </a>
+        <a href="settings.html">
+            <i class="fas fa-cog"></i>
+            <span class="nav-item">Settings</span>
+        </a>
+        <a href="logout.html" class="logout">
+            <i class="fas fa-sign-out-alt"></i>
+            <span class="nav-item">Log out</span>
+        </a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+        <div class="header">
+            <h1>Edit Donation</h1>
+        </div>
+
+        <div class="form-container">
+            <h2>Edit Existing Donation</h2>
+            <form id="editForm">
+                <div class="form-group">
+                    <label for="donationId">Donation ID</label>
+                    <input type="number" id="donationId" name="donationId" placeholder="Enter the Donation ID" required>
+                </div>
+                <div class="form-group">
+                    <label for="type">Type of Food:</label>
+                    <input type="text" id="type" name="foodType" placeholder="Enter type of food" required>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Quantity:</label>
+                    <input type="number" id="quantity" name="quantity" placeholder="Enter quantity of food" required>
+                </div>
+                <div class="form-group">
+                    <label for="expiry">Expiry Date:</label>
+                    <input type="date" id="expiry" name="expiryDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="pickup">Pickup Time:</label>
+                    <input type="datetime-local" id="pickup" name="pickUpTime" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit">Update Donation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('editForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+
+            const response = await fetch(`http://localhost:3000/edit-donation/${data.donationId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+
+            if (response.ok) {
+                alert('Donation updated successfully!');
+                event.target.reset();
+            } else {
+                const errorText = await response.text();
+                alert('Failed to update donation: ' + errorText);
+            }
+        });
+    </script>
+</body>
+</html>

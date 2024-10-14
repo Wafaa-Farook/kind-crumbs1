@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claim Donations</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <ul>
+                <li><a href="view_donations.html">
+                  <i class="fas fa-box-open"></i>
+                  <span class="nav-item">View Donations</span>
+                </a></li>
+                <li><a href="claim_donations.html">
+                  <i class="fas fa-hand-holding"></i>
+                  <span class="nav-item">Claim Donations</span>
+                </a></li>
+                <li><a href="past_donations.html">
+                  <i class="fas fa-history"></i>
+                  <span class="nav-item">Past Donations</span>
+                </a></li>
+                <li><a href="settings.html">
+                  <i class="fas fa-cog"></i>
+                  <span class="nav-item">Settings</span>
+                </a></li>
+                <li><a href="logout.html" class="logout">
+                  <i class="fas fa-sign-out-alt"></i>
+                  <span class="nav-item">Log out</span>
+                </a></li>
+            </ul>
+        </nav>
+
+        <section class="main">
+            <div class="main-top">
+                <h1>Claim Donations</h1>
+                <i class="fas fa-hand-holding"></i>
+            </div>
+
+            <div class="dashboard-content">
+                <h2>Available Donations</h2>
+                <p>Here you can claim the donations available for pickup:</p>
+        
+                <!-- Donations Table -->
+                <table class="donation-table" id="donationsTable">
+                  <thead>
+                    <tr>
+                      <th>Donation ID</th>
+                      <th>Food Type</th>
+                      <th>Quantity</th>
+                      <th>Expiry Date</th>
+                      <th>PickUp Time</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Donations will be populated here -->
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        
+          <script>
+            async function fetchAvailableDonations() {
+                try {
+                    const response = await fetch('/ngo-dashboard/view_donations'); // Adjust the endpoint accordingly
+                    const donations = await response.json();
+        
+                    const tableBody = document.getElementById('donationsTable').getElementsByTagName('tbody')[0];
+                    tableBody.innerHTML = ''; // Clear existing rows
+        
+                    donations.forEach(donation => {
+                        const row = tableBody.insertRow();
+                        row.insertCell(0).innerText = donation.DonationID;
+                        row.insertCell(1).innerText = donation.FoodType;
+                        row.insertCell(2).innerText = donation.Quantity;
+                        row.insertCell(3).innerText = donation.ExpiryDate;
+                        row.insertCell(4).innerText = donation.PickUpTime;
+                        row.insertCell(5).innerText = 'Available';
+        
+                        const claimCell = row.insertCell(6);
+                        const claimButton = document.createElement('button');
+                        claimButton.innerText = 'Claim';
+                        claimButton.onclick = () => claimDonation(donation.DonationID);
+                        claimCell.appendChild(claimButton);
+                    });
+                } catch (error) {
+                    console.error('Error fetching donations:', error);
+                }
+            }
+        
+            async function claimDonation(donationID) {
+              try {
+                  const response = await fetch(`/ngo-dashboard/claim_donations/${donationID}`, {
+                      method: 'POST', // Send a POST request to claim donation
+                      headers: {
+                          'Content-Type': 'application/json',
+                      }
+                  });
+          
+                  if (!response.ok) {
+                      throw new Error('Failed to claim donation: ' + response.statusText);
+                  }
+          
+                  const result = await response.json();
+                  console.log('Claim successful:', result);
+                  
+                  // Optionally refresh the page or update the donations list to reflect changes
+                  alert('Donation claimed successfully!');
+                  location.reload(); // Reloads the page after claiming
+              } catch (error) {
+                  console.error('Error claiming donation:', error);
+                  alert('Failed to claim donation.');
+              }
+          }
+          
+            
+        
+            // Fetch donations on page load
+            window.onload = fetchAvailableDonations;
+          </script>
+        </body>
+        </html>
