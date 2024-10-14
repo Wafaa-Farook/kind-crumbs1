@@ -5,61 +5,93 @@ const User = require('../models/User'); // Adjust this path if necessary
 const router = express.Router();
 
 
-
 // Route for user registration (sign up)
 router.post('/signup', async (req, res) => {
     try {
         const { username, password, email, phone, role } = req.body;
-        
+
         // Check if all fields are filled
         if (!username || !password || !email || !phone || !role) {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
         // Check if the user already exists by email
-        const existingUser = await User.findByEmail(email); // This function should return a user if one exists with the given email
+        const existingUser = await User.findByEmail(email);
         if (existingUser) {
-            return res.status(409).json({ message: 'User already exists. Please login.' });
+            // Redirect to login page if user already exists
+            return res.status(409).json({ 
+                message: 'User already exists. Redirecting to login...', 
+                redirectUrl: '/login.html' 
+            });
         }
 
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create new user
-        const userId = await User.create(username, hashedPassword, email,phone, role);
+        const userId = await User.create(username, hashedPassword, email, phone, role);
 
-        // Respond with success and redirect to login page
-        res.status(201).json({ message: 'User created successfully. Redirecting to login...', userId });
+        // Determine redirect URL based on role
+        let redirectUrl;
+        if (role === 'Restaurant') {
+            redirectUrl = '/restaurant_details.html'; // Redirect for restaurant details
+        } else if (role === 'NGO') {
+            redirectUrl = '/ngo_details.html'; // Redirect for NGO details
+        }
+
+        // Respond with success and redirect URL
+        res.status(201).json({ 
+            message: 'User created successfully. Please fill in additional details.', 
+            userId, 
+            redirectUrl 
+        });
     } catch (error) {
         console.error("Error creating user:", error);
         res.status(500).json({ message: 'Error creating user' });
     }
 });
 
+module.exports = router;
+
+
+
+router.post('/restaurantDetails', async (req, res) => {
+    try {
+        const { Name, Address, ContactInfo } = req.body;
+        const UserID = req.session.user.id; // Assuming session data is being used
+
+        // Save the restaurant details in the database
+        await Restaurant.create(Name, Address, ContactInfo);
+
+        // Respond with success message and redirect to login page
+        res.status(201).json({
+            message: 'Restaurant details saved successfully.',
+            redirectUrl: '/login.html' // Redirect to login after submission
+        });
+    } catch (error) {
+        console.error("Error saving restaurant details:", error);
+        res.status(500).json({ message: 'Error saving restaurant details' });
+    }
+});
 
 module.exports = router;
 
 
 
-/*router.post('/restaurant_details', async (req, res) => {
-    const { restaurantName, address,contact } = req.body;
-
+// Route to handle NGO details submission
+router.post('/ngoDetails', async (req, res) => {
     try {
-        // Here you would insert the restaurant details into your database
-        const result = await db.query(
-            'INSERT INTO Restaurants (Name, Address,ContactInfo) VALUES (?, ?,?)', 
-            [restaurantName, address,contact]
-        );
+        const { UserID, Name, Address, ContactInfo} = req.body;
 
-        res.status(201).json({ message: 'Restaurant details submitted successfully.' });
+        // Save the NGO details in the database
+        await NGO.create(UserID, Name, Address, ContactInfo);
+
+        res.status(201).json({ message: 'NGO details saved successfully.' });
     } catch (error) {
-        console.error('Error saving restaurant details:', error);
-        res.status(500).json({ message: 'Failed to save restaurant details.' });
+        console.error("Error saving NGO details:", error);
+        res.status(500).json({ message: 'Error saving NGO details' });
     }
 });
-
-// Export your router
-module.exports = router;*/
 
 router.post('/login', async (req, res) => {
     try {

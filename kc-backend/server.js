@@ -9,6 +9,9 @@ const port = process.env.PORT || 3000;
 const cors = require('cors');
 const crypto = require('crypto');
 const secretKey = crypto.randomBytes(64).toString('hex');
+// In your server.js or app.js
+const restaurantRoutes = require('./routes/users'); // Or wherever you defined your routes
+app.use('/restaurantDetails', restaurantRoutes);
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../kc-frontend/home.html'));
@@ -70,6 +73,8 @@ app.get('/test-session', (req, res) => {
         res.send(`You have visited this page ${req.session.views} times.`);
     }
 });
+
+
 
 app.post('/users', (req, res) => {
     const { username, password, email, phone, role } = req.body;

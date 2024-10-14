@@ -8,8 +8,8 @@
 </head>
 <body>
 <div class="restaurant-container">
-    <h2>Enter Restaurant Details</h2>
-    <form id="restaurantForm">
+    <h2>Enter NGO Details</h2>
+    <form id="ngoDetailsForm">
         <div class="input-group">
             <label for="name">NGO Name</label>
             <input type="text" id="name" name="name" required>
@@ -29,29 +29,33 @@
     
 </div>
 <script>
-    document.getElementById('restaurantForm').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(event.target);
+    document.getElementById('ngoDetailsForm').addEventListener('submit', async (event) => {
+        event.preventDefault(); // Prevent the default form submission
+
+        const form = event.target;
+        const formData = new FormData(form);
         const data = Object.fromEntries(formData);
+
         try {
-            const response = await fetch('http://localhost:3000/add_restaurant', {
+            const response = await fetch(form.action, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(data),
+                body: JSON.stringify(data), // Convert form data to JSON
             });
+
+            const result = await response.json();
+
             if (response.ok) {
-                alert('Restaurant added successfully!');
-                event.target.reset(); // Reset the form after submission
+                alert('Details submitted successfully. Redirecting to login...');
+                window.location.href = '/login.html'; // Redirect to login after submitting details
             } else {
-                const errorText = await response.text();
-                alert('Failed to add restaurant: ' + errorText);
-                console.log(errorText);
+                alert(result.message); // Show error message
             }
         } catch (error) {
-            alert('Error connecting to the server');
             console.error('Error:', error);
+            alert('An error occurred. Please try again.');
         }
     });
 </script>

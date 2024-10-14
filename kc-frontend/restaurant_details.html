@@ -9,7 +9,7 @@
 <body>
 <div class="restaurant-container">
     <h2>Enter Restaurant Details</h2>
-    <form id="restaurantForm">
+    <form id="restaurantDetailsForm">
         <div class="input-group">
             <label for="name">Restaurant Name</label>
             <input type="text" id="name" name="name" required>
@@ -30,29 +30,35 @@
 </div>
 <script>
     document.getElementById('restaurantDetailsForm').addEventListener('submit', async (event) => {
-        event.preventDefault();
+        event.preventDefault(); // Prevent the default form submission
     
-        const formData = new FormData(event.target);
+        const form = event.target;
+        const formData = new FormData(form);
         const data = Object.fromEntries(formData);
     
         try {
-            const response = await fetch('/restaurant_details', { // This is the endpoint you defined in your backend
+            const response = await fetch('http://localhost:3000/users/restaurantDetails', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data), // Convert form data to JSON
             });
     
-            const result = await response.json();
-            alert(result.message);
+            const result = await response.json(); // Parse the JSON response
+    
             if (response.ok) {
-                window.location.href = '/login.html'; // Redirect to login
+                alert(result.message); // Show success message
+                window.location.href = result.redirectUrl; // Redirect to login after form submission
+            } else {
+                alert(result.message); // Show error message if submission fails
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred while submitting restaurant details.');
+            alert('An error occurred. Please try again.');
         }
     });
-    
 </script>
+
 </body>
 </html>
