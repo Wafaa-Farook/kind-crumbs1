@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logging Out...</title>
+</head>
+<body>
+  <script>
+    // Example: Clear sessionStorage (or any authentication tokens/cookies)
+    sessionStorage.clear(); // Clear any stored session data
+
+    // Optionally, clear authentication cookie if used
+    document.cookie = "authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+    // Redirect to the homepage (or any page)
+    window.location.href = "home.html"; // Redirect to your homepage
+  </script>
+
+  <p>Logging out... You will be redirected shortly.</p>
+</body>
+</html>

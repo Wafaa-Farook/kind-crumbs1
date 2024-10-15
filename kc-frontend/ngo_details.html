@@ -8,48 +8,78 @@
 </head>
 <body>
 <div class="restaurant-container">
-    <h2>Enter NGO Details</h2>
+    <h2>NGO Details</h2>
     <form id="ngoDetailsForm">
-        <div class="input-group">
-            <label for="name">NGO Name</label>
+        <input type="hidden" id="userId" name="userID" value="">
+        <div>
+            <label for="name">NGO Name:</label>
             <input type="text" id="name" name="name" required>
         </div>
-        <div class="input-group">
-            <label for="address">Address</label>
+        <div>
+            <label for="address">Address:</label>
             <input type="text" id="address" name="address" required>
         </div>
-        <div class="input-group">
-            <label for="contact">Contact Information</label>
-            <input type="text" id="contact" name="contactInfo" required>
+        <div>
+            <label for="contactInfo">Contact Info:</label>
+            <input type="text" id="contactInfo" name="contactInfo" required>
         </div>
-        <div class="form-group">
-            <button type="submit">Submit</button>
-        </div>
+        <button type="submit">Submit</button>
     </form>
     
 </div>
-<script>
+
+    <script>
+        // Fetch userId from the server-side (you need to implement this endpoint)
+    async function getUserId() {
+        try {
+            const response = await fetch('/api/getUserId'); // Create this endpoint on the server
+            const data = await response.json();
+            if (response.ok) {
+                return data.userId; // Expecting { userId: '...' }
+            } else {
+                throw new Error(data.message);
+            }
+        } catch (error) {
+            console.error('Error fetching user ID:', error);
+            alert('Could not retrieve user ID.');
+            return null; // Return null if there's an error
+        }
+    }
+
     document.getElementById('ngoDetailsForm').addEventListener('submit', async (event) => {
-        event.preventDefault(); // Prevent the default form submission
+        event.preventDefault(); // Prevent default form submission
+
+        // Retrieve userId
+        const userId = await getUserId();
+        if (!userId) {
+            alert('User ID not found');
+            return; // Exit if userId is not available
+        }
 
         const form = event.target;
         const formData = new FormData(form);
-        const data = Object.fromEntries(formData);
+        const data = {
+            userId, // Include the retrieved userId
+            name: formData.get('name'),
+            address: formData.get('address'),
+            contactInfo: formData.get('contactInfo'),
+        };
+
+        console.log("Data being sent to server:", data); // Debugging log
 
         try {
-            const response = await fetch(form.action, {
+            const response = await fetch('http://localhost:3000/users/ngo_details', { // Correct endpoint
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(data), // Convert form data to JSON
+                body: JSON.stringify(data), // Send as JSON
             });
 
             const result = await response.json();
-
             if (response.ok) {
-                alert('Details submitted successfully. Redirecting to login...');
-                window.location.href = '/login.html'; // Redirect to login after submitting details
+                alert(result.message);
+                window.location.href = result.redirectUrl; // Redirect to NGO dashboard or another page
             } else {
                 alert(result.message); // Show error message
             }
@@ -58,6 +88,7 @@
             alert('An error occurred. Please try again.');
         }
     });
+    
 </script>
 </body>
 </html>

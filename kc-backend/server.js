@@ -11,6 +11,7 @@ const crypto = require('crypto');
 const secretKey = crypto.randomBytes(64).toString('hex');
 // In your server.js or app.js
 const restaurantRoutes = require('./routes/users'); // Or wherever you defined your routes
+const db = require('./db');
 app.use('/restaurantDetails', restaurantRoutes);
 
 app.get('/', (req, res) => {
@@ -38,6 +39,16 @@ app.use(session({
 app.get('/', (req, res) => {
     res.send('KindCrumbs API is running!');
 });
+
+// Route to get user ID from session
+app.get('/api/getUserId', (req, res) => {
+    if (req.session && req.session.userId) {
+        res.json({ userId: req.session.userId });
+    } else {
+        res.status(404).json({ message: 'User ID not found' });
+    }
+});
+
 
 // Use user routes
 app.use('/users', userRoutes);
@@ -79,81 +90,92 @@ app.get('/test-session', (req, res) => {
 app.post('/users', (req, res) => {
     const { username, password, email, phone, role } = req.body;
     const query = 'INSERT INTO Users (Username, Password, Email, Phone, Role) VALUES (?, ?, ?, ?, ?)';
-
-    connection.query(query, [username, password, email, phone, role], (err, results) => {
-        if (err) {
-            return res.status(400).send(err);
-        }
-        res.status(201).send({ id: results.insertId, username, email, phone, role });
-    });
+    
+    db.execute(query, [username, password, email, phone, role])
+        .then(([results]) => {
+            res.status(201).send({ id: results.insertId, username, email, phone, role });
+        })
+        .catch((err) => {
+            res.status(400).send(err);
+        });
 });
+
 
 // Register a restaurant
-app.post('/restaurants', (req, res) => {
-    const { userID, name, address, contactInfo } = req.body;
-    const query = 'INSERT INTO Restaurants (UserID, Name, Address, ContactInfo) VALUES (?, ?, ?, ?)';
-
-    connection.query(query, [userID, name, address, contactInfo], (err, results) => {
-        if (err) {
-            return res.status(400).send(err);
-        }
-        res.status(201).send({ id: results.insertId, name, address, contactInfo });
-    });
-});
-
-// Register an NGO
 app.post('/ngos', (req, res) => {
     const { userID, name, address, contactInfo } = req.body;
     const query = 'INSERT INTO NGOs (UserID, Name, Address, ContactInfo) VALUES (?, ?, ?, ?)';
+    
+    db.execute(query, [userID, name, address, contactInfo])
+        .then(([results]) => {
+            res.status(201).send({ id: results.insertId, name, address, contactInfo });
+        })
+        .catch((err) => {
+            res.status(400).send(err);
+        });
+});
 
-    connection.query(query, [userID, name, address, contactInfo], (err, results) => {
-        if (err) {
-            return res.status(400).send(err);
-        }
-        res.status(201).send({ id: results.insertId, name, address, contactInfo });
-    });
+
+
+// Register an NGO
+app.post('/restaurants', (req, res) => {
+    const { userID, name, address, contactInfo } = req.body;
+    const query = 'INSERT INTO Restaurants (UserID, Name, Address, ContactInfo) VALUES (?, ?, ?, ?)';
+    
+    db.execute(query, [userID, name, address, contactInfo])
+        .then(([results]) => {
+            res.status(201).send({ id: results.insertId, name, address, contactInfo });
+        })
+        .catch((err) => {
+            res.status(400).send(err);
+        });
 });
 
 // Create a food donation
 app.post('/donations', (req, res) => {
     const { restaurantID, foodType, quantity, expiryDate, pickUpTime, status = 'Pending' } = req.body;
     const query = 'INSERT INTO FoodDonations (RestaurantID, FoodType, Quantity, ExpiryDate, PickUpTime, Status) VALUES (?, ?, ?, ?, ?, ?)';
-
-    connection.query(query, [restaurantID, foodType, quantity, expiryDate, pickUpTime, status], (err, results) => {
-        if (err) {
-            return res.status(400).send(err);
-        }
-        res.status(201).send({ id: results.insertId, foodType, quantity, expiryDate, pickUpTime, status });
-    });
+    
+    db.execute(query, [restaurantID, foodType, quantity, expiryDate, pickUpTime, status])
+        .then(([results]) => {
+            res.status(201).send({ id: results.insertId, foodType, quantity, expiryDate, pickUpTime, status });
+        })
+        .catch((err) => {
+            res.status(400).send(err);
+        });
 });
+
 
 // Get all donations
 app.get('/donations', (req, res) => {
     const query = 'SELECT * FROM FoodDonations';
-
-    connection.query(query, (err, results) => {
-        if (err) {
-            return res.status(500).send(err);
-        }
-        res.send(results);
-    });
+    
+    db.execute(query)
+        .then(([results]) => {
+            res.send(results);
+        })
+        .catch((err) => {
+            res.status(500).send(err);
+        });
 });
+
 
 
 // Cancel a donation
 app.delete('/cancel-donation/:id', (req, res) => {
     const donationId = req.params.id;
     const query = 'DELETE FROM FoodDonations WHERE DonationID = ?';
-
-    connection.query(query, [donationId], (err, results) => {
-        if (err) {
-            return res.status(400).send(err);
-        }
-        if (results.affectedRows === 0) {
-            return res.status(404).send('Donation not found');
-        }
-        res.send('Donation cancelled successfully');
-    });
+    
+    db.execute(query, [donationId])
+        .then(([results]) => {
+            if (results.affectedRows === 0) {
+                return res.status(404).send('Donation not found');
+            }
+            res.send('Donation cancelled successfully');
+        })
+        .catch((err) => {
+            res.status(400).send(err);
+        });
 });
 
 //edit donations
@@ -166,7 +188,7 @@ app.put('/edit-donation/:id', (req, res) => {
         SET FoodType = ?, Quantity = ?, ExpiryDate = ?, PickUpTime = ? 
         WHERE DonationID = ?`;
 
-    connection.query(query, [foodType, quantity, expiryDate, pickUpTime, donationId], (err, results) => {
+    db.query(query, [foodType, quantity, expiryDate, pickUpTime, donationId], (err, results) => {
         if (err) {
             console.error(err); // Log the error on the server side
             return res.status(400).send(err);

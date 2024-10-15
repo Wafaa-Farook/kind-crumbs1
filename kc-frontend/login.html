@@ -98,7 +98,10 @@
     
             if (response.ok) {
                 alert(result.message); // Show success message
-                window.location.href = result.redirectUrl; // Use the redirect URL from the server
+                // Redirect based on role
+                if (result.redirectUrl) {
+                    window.location.href = result.redirectUrl; // Use the redirect URL from the server
+                }
             } else {
                 alert(result.message); // Show error message
             }
@@ -107,8 +110,7 @@
             alert('An error occurred. Please try again.');
         }
     });
-    
-    </script>
+</script>
 
 </body>
 </html>

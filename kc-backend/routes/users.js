@@ -1,7 +1,10 @@
 const session = require('express-session');
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const User = require('../models/User'); // Adjust this path if necessary
+const User = require('../models/User');
+const NGO = require('../models/ngo');
+const Restaurant = require('../models/restaurant');
+// Adjust this path if necessary
 const router = express.Router();
 
 
@@ -18,7 +21,6 @@ router.post('/signup', async (req, res) => {
         // Check if the user already exists by email
         const existingUser = await User.findByEmail(email);
         if (existingUser) {
-            // Redirect to login page if user already exists
             return res.status(409).json({ 
                 message: 'User already exists. Redirecting to login...', 
                 redirectUrl: '/login.html' 
@@ -31,20 +33,22 @@ router.post('/signup', async (req, res) => {
         // Create new user
         const userId = await User.create(username, hashedPassword, email, phone, role);
 
-        // Determine redirect URL based on role
-        let redirectUrl;
-        if (role === 'Restaurant') {
-            redirectUrl = '/restaurant_details.html'; // Redirect for restaurant details
-        } else if (role === 'NGO') {
-            redirectUrl = '/ngo_details.html'; // Redirect for NGO details
-        }
+        // Store the userId and role in session for future use (or send them to the frontend)
+        req.session.userId = userId;
+        req.session.role = role;
 
-        // Respond with success and redirect URL
-        res.status(201).json({ 
-            message: 'User created successfully. Please fill in additional details.', 
-            userId, 
-            redirectUrl 
-        });
+        // Redirect based on role (NGO or Restaurant)
+        if (role === 'NGO') {
+            res.status(201).json({ 
+                message: 'User created successfully. Redirecting to NGO details form.', 
+                redirectUrl: '/ngo_details.html' 
+            });
+        } else if (role === 'Restaurant') {
+            res.status(201).json({ 
+                message: 'User created successfully. Redirecting to Restaurant details form.', 
+                redirectUrl: '/restaurant_details.html' 
+            });
+        }
     } catch (error) {
         console.error("Error creating user:", error);
         res.status(500).json({ message: 'Error creating user' });
@@ -53,45 +57,66 @@ router.post('/signup', async (req, res) => {
 
 module.exports = router;
 
-
-
-router.post('/restaurantDetails', async (req, res) => {
-    try {
-        const { Name, Address, ContactInfo } = req.body;
-        const UserID = req.session.user.id; // Assuming session data is being used
-
-        // Save the restaurant details in the database
-        await Restaurant.create(Name, Address, ContactInfo);
-
-        // Respond with success message and redirect to login page
-        res.status(201).json({
-            message: 'Restaurant details saved successfully.',
-            redirectUrl: '/login.html' // Redirect to login after submission
-        });
-    } catch (error) {
-        console.error("Error saving restaurant details:", error);
-        res.status(500).json({ message: 'Error saving restaurant details' });
+// Route to get user ID from session
+router.get('/api/getUserId', (req, res) => {
+    if (req.session && req.session.userId) {
+        res.json({ userId: req.session.userId }); // Send back the userId
+    } else {
+        res.status(404).json({ message: 'User ID not found in session.' });
     }
 });
-
-module.exports = router;
 
 
 
 // Route to handle NGO details submission
-router.post('/ngoDetails', async (req, res) => {
+router.post('/ngo_details', async (req, res) => {
     try {
-        const { UserID, Name, Address, ContactInfo} = req.body;
+        const { userId, name, address, contactInfo } = req.body;
 
-        // Save the NGO details in the database
-        await NGO.create(UserID, Name, Address, ContactInfo);
+        // Check if all fields are filled
+        if (!userId || !name || !address || !contactInfo) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+        req.session.userId = userId;
+        // Save the NGO details (assuming you have a NGO model)
+        await NGO.create(userId, name, address, contactInfo);
 
-        res.status(201).json({ message: 'NGO details saved successfully.' });
+        // Redirect to NGO dashboard
+        res.status(201).json({ 
+            message: 'NGO details saved successfully.', 
+            redirectUrl: '/ngo.html' // Adjust according to your directory structure
+        });
     } catch (error) {
         console.error("Error saving NGO details:", error);
         res.status(500).json({ message: 'Error saving NGO details' });
     }
 });
+
+router.post('/restaurant_details', async (req, res) => {
+    try {
+        const { userId, name, address, contactInfo } = req.body;
+
+        // Check if all fields are filled
+        if (!userId || !name || !address || !contactInfo) {
+            return res.status(400).json({ message: 'All fields are required' });
+        }
+        req.session.userId = userId;
+        // Save the NGO details (assuming you have a NGO model)
+        await Restaurant.create(userId, name, address, contactInfo);
+
+        // Redirect to NGO dashboard
+        res.status(201).json({ 
+            message: 'Restaurant details saved successfully.', 
+            redirectUrl: '/restaurant.html' // Adjust according to your directory structure
+        });
+    } catch (error) {
+        console.error("Error saving Restaurant details:", error);
+        res.status(500).json({ message: 'Error saving Restaurant details' });
+    }
+});
+
+
+
 
 router.post('/login', async (req, res) => {
     try {
@@ -120,12 +145,12 @@ router.post('/login', async (req, res) => {
         if (user.Role === 'NGO') {
             return res.status(200).json({ 
                 message: 'Login successful', 
-                redirectUrl: '/ngo.html' // Path to ngo.html inside kc-frontend
+                redirectUrl: '/ngo_details.html' // Path to ngo.html inside kc-frontend
             });
         } else if (user.Role === 'Restaurant') {
             return res.status(200).json({ 
                 message: 'Login successful', 
-                redirectUrl: '/restaurant.html' // Path for restaurant dashboard
+                redirectUrl: '/restaurant_details.html' // Path for restaurant dashboard
             });
         } else {
             return res.status(403).json({ message: 'Unauthorized role' });
@@ -141,12 +166,13 @@ router.post('/login', async (req, res) => {
 
 
 
-router.get('/logout', (req, res) => {
-    req.session.destroy(err => {
+// Express.js route to handle logout
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
         if (err) {
-            return res.status(500).json({ message: 'Failed to log out' });
+            return res.status(500).send('Error logging out');
         }
-        res.redirect('/login.html');  // Redirect to login after logging out
+        res.redirect('/home.html'); // Redirect to homepage after logout
     });
 });
 

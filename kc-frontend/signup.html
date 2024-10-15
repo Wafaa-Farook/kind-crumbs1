@@ -44,29 +44,36 @@
     document.getElementById('signupForm').addEventListener('submit', async (event) => {
         event.preventDefault(); // Prevent the default form submission
     
-        const formData = new FormData(event.target);
+        const form = event.target;
+        const formData = new FormData(form);
         const data = Object.fromEntries(formData);
     
         try {
-            const response = await fetch('http://localhost:3000/users/signup', {
+            const response = await fetch(form.action, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data), // Convert form data to JSON
             });
     
             const result = await response.json();
     
+            console.log("Response Status:", response.status); // Log the response status for debugging
+            console.log("Response Data:", result); // Log the result for debugging
+    
             if (response.ok) {
                 alert(result.message); // Show success message
-                window.location.href = result.redirectUrl; // Redirect to the login or details page
+                window.location.href = result.redirectUrl;; // Redirect to login page after success
             } else {
                 alert(result.message); // Show error message
-                if (result.redirectUrl) {
-                    window.location.href = result.redirectUrl; // Redirect to login if user already exists
+                if (result.message.includes('User already exists')) {
+                    window.location.href = '/login.html';  // If login.html is in a subfolder
+                    ; // Redirect to login if user already exists
                 }
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error:', error); // Log the error in the console
             alert('An error occurred. Please try again.');
         }
     });
